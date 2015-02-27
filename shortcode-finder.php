@@ -12,6 +12,8 @@
 	class Shortcode_Finder {
 		
 		public static $admin_page_slug = 'shortcode_finder';
+		public static $post_types = array();
+		public static $settings;
 		private static $admin_page_title = 'Shortcode Finder';
 		private static $_instance = null;
 	
@@ -26,8 +28,25 @@
 	
 		public function __construct() {
 			
+			/* Include settings page class */
+			include_once 'shortcode-finder-settings.php';
+			
+			/* Assign settings to this class */
+			self::$settings = Shortcode_Finder_Settings::get_settings();
+			
 			/* Register admin page */
 			add_action( 'admin_menu', array( __CLASS__, 'register_admin_page' ) );
+			
+			/* Add and render shortcode column to selected post types */
+			foreach( self::$settings['display_column'] as $post_type ) {
+				
+				add_filter( 'manage_'. $post_type .'_posts_columns', array( __CLASS__, 'add_shortcode_post_column' ) );
+				add_filter( 'manage_'. $post_type .'_posts_custom_column', array( __CLASS__, 'render_shortcode_post_column' ), 10, 2 );
+				
+			}
+			
+			/* Set available post types */
+			add_action( 'admin_init', array( __CLASS__, 'set_post_types' ) );
 			
 		}
 
@@ -42,7 +61,7 @@
 		function render_admin_page() {
 						
 			/* Load table class */
-			require_once 'shortcode-finder-table.php';
+			include_once 'shortcode-finder-table.php';
 
 			/* Open page */
 			echo '<div class="wrap">';
@@ -57,6 +76,45 @@
 			
 			/* Close page */
 			echo '</div>';
+			
+		}
+
+		/* Add shortcode column to selected post types */
+		function add_shortcode_post_column( $columns ) {
+			
+			$columns['shortcodes'] = 'Shortcodes Found';
+			return $columns;
+			
+		}
+
+		/* Render shortcode column to selected post types */
+		function render_shortcode_post_column( $column, $post_id ) {
+			
+			/* Get shortcodes in post */
+			$shortcodes_found = self::get_shortcodes_for_post( get_post_field( 'post_content', $post_id ) );
+			
+			/* Display if found */
+			if ( ! empty( $shortcodes_found ) )
+				echo implode( '<br />', $shortcodes_found );
+			
+		}
+		
+		/* Set available post types */
+		function set_post_types() {
+			
+			/* Set list of post types to exclude */
+			$excluded_post_types = apply_filters( 'shortcode_finder_excluded_post_types', array( 'attachment', 'revision', 'nav_menu_item' ) );
+			
+			/* Get registered post types */
+			$registered_post_types = get_post_types( array(), 'objects' );
+			
+			/* Loop through registered post types and push to class array if not excluded */
+			foreach( $registered_post_types as $post_type ) {
+								
+				if( ! in_array( $post_type->name, $excluded_post_types ) )
+					self::$post_types[$post_type->name] = $post_type->label;				
+				
+			}
 			
 		}
 

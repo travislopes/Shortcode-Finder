@@ -8,7 +8,6 @@
 		
 		public $items = array();
 		private $per_page = 25;
-		private $post_types = array();
 		private $shortcodes = array();
 		
 		function __construct() {
@@ -21,8 +20,6 @@
 				'ajax'			=>	false
 			) );
 						
-			/* Set available post types */
-			$this->set_post_types();
 			
 			/* Set available shortcodes */
 			$this->set_shortcodes();
@@ -49,7 +46,7 @@
 				
 		/* Prepare shortcodes for table */
 		function prepare_items() {
-						
+			
 			/* Define column headers */
 			$columns = $this->get_columns();
 			$hidden = array();
@@ -57,7 +54,7 @@
 			$this->_column_headers = array($columns, $hidden, $sortable);
 			
 			/* Prepare filter for query */
-			$query_post_types = ( ! empty( $_REQUEST['filter_post_type'] ) ) ? sanitize_key( $_REQUEST['filter_post_type'] ) : array_keys( $this->post_types );
+			$query_post_types = ( ! empty( $_REQUEST['filter_post_type'] ) ) ? sanitize_key( $_REQUEST['filter_post_type'] ) : array_keys( Shortcode_Finder::$post_types );
 			$query_orderby = ( isset( $_GET['orderby'] ) ) ? sanitize_text_field( $_GET['orderby'] ) : 'title';
 			$query_order = ( isset( $_GET['order'] ) ) ? sanitize_text_field( $_GET['order'] ) : 'ASC';
 			$query_shortcode = ( ! empty( $_REQUEST['filter_shortcode'] ) ) ? '['. $_REQUEST['filter_shortcode'] : '';
@@ -79,7 +76,7 @@
 					'id'			=>	$post->ID,
 					'shortcodes'	=>	Shortcode_Finder::get_shortcodes_for_post( $post->post_content ),
 					'title'			=>	$post->post_title,
-					'type'			=>	$this->post_types[$post->post_type]
+					'type'			=>	Shortcode_Finder::$post_types[$post->post_type]
 				);
 				
 			}
@@ -131,7 +128,7 @@
 			echo '<option value="">Filter By Post Type</option>';
 			
 			/* Loop through post types and add to post types filter drop down */
-			foreach( $this->post_types as $value => $label )	
+			foreach( Shortcode_Finder::$post_types as $value => $label )	
 				echo '<option value="'. $value .'" '. selected( ( isset( $_REQUEST['filter_post_type'] ) ) ? $_REQUEST['filter_post_type'] : null, $value, false ) .'>'. $label .'</option>';
 			
 			/* Close post types filter */
@@ -169,26 +166,7 @@
 
 			echo '<br class="clear" /></div>';
 		}
-		
-		/* Set available post types */
-		function set_post_types() {
-			
-			/* Set list of post types to exclude */
-			$excluded_post_types = apply_filters( 'shortcode_finder_excluded_post_types', array( 'attachment', 'revision', 'nav_menu_item' ) );
-			
-			/* Get registered post types */
-			$registered_post_types = get_post_types( array(), 'objects' );
-			
-			/* Loop through registered post types and push to class array if not excluded */
-			foreach( $registered_post_types as $post_type ) {
-								
-				if( ! in_array( $post_type->name, $excluded_post_types ) )
-					$this->post_types[$post_type->name] = $post_type->label;
 				
-			}
-			
-		}
-		
 		/* Set available shortcodes */
 		function set_shortcodes() {
 			
