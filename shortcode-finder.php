@@ -9,6 +9,7 @@
 	Author URI: http://travislop.es
 	*/
 	
+	
 	class Shortcode_Finder {
 		
 		public static $admin_page_slug = 'shortcode_finder';
@@ -131,8 +132,41 @@
 			/* Search for shortcodes */
 			preg_match_all( '/'. $shortcode_regex .'/', $post_content, $shortcodes_found );
 			
+			/* Loop through the shortcodes found array and push them to a separate array */
+			$shortcodes = array();
+			foreach( $shortcodes_found as $child_array ) {
+				
+				foreach( $child_array as $key => $value ) {
+				
+					if ( ! isset( $shortcodes[$key] ) ) 
+						$shortcodes[$key] = array();
+						
+					$shortcodes[$key][] = $value;
+					
+				}
+				
+			}
+			
+			/* Loop through the shortcodes again and put together shortcode string */
+			$shortcode_strings = array();
+			foreach( $shortcodes as &$shortcode ) {
+				
+				$shortcode_string = '['. $shortcode[2];
+				
+				/* If arguments exist, add them to the shortcode string */
+				if ( ! empty( $shortcode[3] ) )
+					$shortcode_string .= $shortcode[3];
+				
+				/* Close shortcode string */
+				$shortcode_string .= ']';
+				
+				/* Add to array */
+				$shortcode_strings[] = $shortcode_string;
+				
+			}
+			
 			/* Return found shortcodes */
-			return $shortcodes_found[0];
+			return $shortcode_strings;
 			
 		}
 		
