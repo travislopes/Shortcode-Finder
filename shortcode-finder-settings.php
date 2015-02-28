@@ -2,8 +2,8 @@
 	
 	class Shortcode_Finder_Settings {
 		
-		private static $admin_page_slug = 'shortcode_finder_settings';
 		private static $admin_menu_title = 'Shortcode Finder';
+		private static $admin_page_slug = 'shortcode_finder_settings';
 		private static $admin_page_title = 'Shortcode Finder Settings';
 		private static $option_name = 'shortcode_finder';
 		private static $_instance = null;
@@ -21,7 +21,10 @@
 						
 			/* Register admin page */
 			add_action( 'admin_menu', array( __CLASS__, 'register_admin_page' ) );
-				
+			
+			/* Add settings link to plugin actions */
+			add_filter( 'plugin_action_links_'. Shortcode_Finder::$basename, array( __CLASS__, 'add_action_links' ) );
+			
 		}
 
 		/* Register admin page */
@@ -132,6 +135,17 @@
 			
 			/* If option does exist, return the decoded JSON array. */
 			return json_decode( $settings, true );
+			
+		}
+
+		/* Add settings link to plugin actions */
+		function add_action_links( $links ) {
+			
+			$plugin_links = array(
+				'<a href="'. admin_url( 'options-general.php?page='. self::$admin_page_slug ) .'">Settings</a>'
+			);
+			
+			return array_merge( $plugin_links, $links );
 			
 		}
 		

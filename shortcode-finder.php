@@ -8,10 +8,11 @@
 	Author: travislopes
 	Author URI: http://travislop.es
 	*/
-
+	
 	class Shortcode_Finder {
 		
 		public static $admin_page_slug = 'shortcode_finder';
+		public static $basename;
 		public static $post_types = array();
 		public static $settings;
 		private static $admin_page_title = 'Shortcode Finder';
@@ -27,6 +28,9 @@
 		}
 	
 		public function __construct() {
+			
+			/* Set basename */
+			self::$basename = plugin_basename( __FILE__ );
 			
 			/* Include settings page class */
 			include_once 'shortcode-finder-settings.php';
