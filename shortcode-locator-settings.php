@@ -1,17 +1,17 @@
 <?php
 	
-	class Shortcode_Finder_Settings {
+	class Shortcode_Locator_Settings {
 		
-		private static $admin_menu_title = 'Shortcode Finder';
-		private static $admin_page_slug = 'shortcode_finder_settings';
-		private static $admin_page_title = 'Shortcode Finder Settings';
-		private static $option_name = 'shortcode_finder';
+		private static $admin_menu_title = 'Shortcode Locator';
+		private static $admin_page_slug = 'shortcode_locator_settings';
+		private static $admin_page_title = 'Shortcode Locator Settings';
+		private static $option_name = 'shortcode_locator';
 		private static $_instance = null;
 	
 		public static function get_instance() {
 			
 			if ( self::$_instance == null )
-				self::$_instance = new Shortcode_Finder_Settings();
+				self::$_instance = new Shortcode_Locator_Settings();
 	
 			return self::$_instance;
 			
@@ -23,7 +23,7 @@
 			add_action( 'admin_menu', array( __CLASS__, 'register_admin_page' ) );
 			
 			/* Add settings link to plugin actions */
-			add_filter( 'plugin_action_links_'. Shortcode_Finder::$basename, array( __CLASS__, 'add_action_links' ) );
+			add_filter( 'plugin_action_links_'. Shortcode_Locator::$basename, array( __CLASS__, 'add_action_links' ) );
 			
 		}
 
@@ -53,7 +53,7 @@
 			echo '<form method="post">';
 			
 			/* Add nonce */
-			wp_nonce_field( 'shortcode_finder_settings' );
+			wp_nonce_field( 'shortcode_locator_settings' );
 			
 			/* Open table */
 			echo '<table class="form-table">';
@@ -62,7 +62,7 @@
 			echo '<tr><th scope="row">Display shortcodes column on post types</th><td><fieldset>';
 			
 			/* Loop through post types */
-			foreach( Shortcode_Finder::$post_types as $post_type_name => $post_type_value ) {
+			foreach( Shortcode_Locator::$post_types as $post_type_name => $post_type_value ) {
 				
 				echo '<label for="display_column_'. $post_type_name .'">';
 				echo '<input name="display_column[]" type="checkbox" id="display_column_'. $post_type_name .'" value="'. $post_type_name .'"'. ( ( in_array( $post_type_name, $current_settings['display_column'] ) ) ? ' checked' : '' ) .' >';
@@ -96,7 +96,7 @@
 			if ( empty( $_POST ) ) return;
 			
 			/* Verify the nonce. */
-			check_admin_referer( 'shortcode_finder_settings' );
+			check_admin_referer( 'shortcode_locator_settings' );
 			
 			/* Prepare the new settings. */
 			$new_settings = array(
@@ -151,4 +151,4 @@
 		
 	}
 
-	Shortcode_Finder_Settings::get_instance();
+	Shortcode_Locator_Settings::get_instance();

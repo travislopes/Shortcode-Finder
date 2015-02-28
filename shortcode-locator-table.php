@@ -4,7 +4,7 @@
 	if ( ! class_exists( 'WP_List_Table' ) )
 		require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 
-	class Shortcode_Finder_Table extends WP_List_Table {
+	class Shortcode_Locator_Table extends WP_List_Table {
 		
 		public $items = array();
 		private $per_page = 25;
@@ -54,7 +54,7 @@
 			$this->_column_headers = array($columns, $hidden, $sortable);
 			
 			/* Prepare filter for query */
-			$query_post_types = ( ! empty( $_REQUEST['filter_post_type'] ) ) ? sanitize_key( $_REQUEST['filter_post_type'] ) : array_keys( Shortcode_Finder::$post_types );
+			$query_post_types = ( ! empty( $_REQUEST['filter_post_type'] ) ) ? sanitize_key( $_REQUEST['filter_post_type'] ) : array_keys( Shortcode_Locator::$post_types );
 			$query_orderby = ( isset( $_GET['orderby'] ) ) ? sanitize_text_field( $_GET['orderby'] ) : 'title';
 			$query_order = ( isset( $_GET['order'] ) ) ? sanitize_text_field( $_GET['order'] ) : 'ASC';
 			$query_shortcode = ( ! empty( $_REQUEST['filter_shortcode'] ) ) ? '['. $_REQUEST['filter_shortcode'] : '';
@@ -74,9 +74,9 @@
 				
 				$this->items[] = array(
 					'id'			=>	$post->ID,
-					'shortcodes'	=>	Shortcode_Finder::get_shortcodes_for_post( $post->post_content ),
+					'shortcodes'	=>	Shortcode_Locator::get_shortcodes_for_post( $post->post_content ),
 					'title'			=>	$post->post_title,
-					'type'			=>	Shortcode_Finder::$post_types[$post->post_type]
+					'type'			=>	Shortcode_Locator::$post_types[$post->post_type]
 				);
 				
 			}
@@ -119,7 +119,7 @@
 		function extra_tablenav( $position ) {
 			
 			/* Open table actions container and form */
-			echo '<div class="alignleft actions"><form method="get"><input type="hidden" name="page" value="'. Shortcode_Finder::$admin_page_slug .'">';
+			echo '<div class="alignleft actions"><form method="get"><input type="hidden" name="page" value="'. Shortcode_Locator::$admin_page_slug .'">';
 			
 			/* Open post types filter */
 			echo '<select name="filter_post_type">';
@@ -128,7 +128,7 @@
 			echo '<option value="">Filter By Post Type</option>';
 			
 			/* Loop through post types and add to post types filter drop down */
-			foreach( Shortcode_Finder::$post_types as $value => $label )	
+			foreach( Shortcode_Locator::$post_types as $value => $label )	
 				echo '<option value="'. $value .'" '. selected( ( isset( $_REQUEST['filter_post_type'] ) ) ? $_REQUEST['filter_post_type'] : null, $value, false ) .'>'. $label .'</option>';
 			
 			/* Close post types filter */

@@ -1,28 +1,28 @@
 <?php
 	
 	/*
-	Plugin Name: Shortcode Finder
-	Plugin URI: http://travislop.es/plugins/shortcode-finder/
-	Description: Quickly find what and where shortcodes are being used
+	Plugin Name: Shortcode Locator
+	Plugin URI: http://travislop.es/plugins/shortcode-locator/
+	Description: Quickly locate what and where shortcodes are being used
 	Version: 1.0.0
 	Author: travislopes
 	Author URI: http://travislop.es
 	*/
 	
 	
-	class Shortcode_Finder {
+	class Shortcode_Locator {
 		
-		public static $admin_page_slug = 'shortcode_finder';
+		public static $admin_page_slug = 'shortcode_locator';
 		public static $basename;
 		public static $post_types = array();
 		public static $settings;
-		private static $admin_page_title = 'Shortcode Finder';
+		private static $admin_page_title = 'Shortcode Locator';
 		private static $_instance = null;
 	
 		public static function get_instance() {
 			
 			if ( self::$_instance == null )
-				self::$_instance = new Shortcode_Finder();
+				self::$_instance = new Shortcode_Locator();
 	
 			return self::$_instance;
 			
@@ -34,10 +34,10 @@
 			self::$basename = plugin_basename( __FILE__ );
 			
 			/* Include settings page class */
-			include_once 'shortcode-finder-settings.php';
+			include_once 'shortcode-locator-settings.php';
 			
 			/* Assign settings to this class */
-			self::$settings = Shortcode_Finder_Settings::get_settings();
+			self::$settings = Shortcode_Locator_Settings::get_settings();
 			
 			/* Register admin page */
 			add_action( 'admin_menu', array( __CLASS__, 'register_admin_page' ) );
@@ -58,7 +58,7 @@
 		/* Register admin page */
 		function register_admin_page() {
 			
-			add_submenu_page( 'tools.php', self::$admin_page_title, self::$admin_page_title, 'update_core', self::$admin_page_slug, array( __CLASS__, 'render_admin_page' ) );
+			add_submenu_page( 'tools.php', self::$admin_page_title, self::$admin_page_title, 'edit_posts', self::$admin_page_slug, array( __CLASS__, 'render_admin_page' ) );
 			
 		}
 		
@@ -66,7 +66,7 @@
 		function render_admin_page() {
 						
 			/* Load table class */
-			include_once 'shortcode-finder-table.php';
+			include_once 'shortcode-locator-table.php';
 
 			/* Open page */
 			echo '<div class="wrap">';
@@ -75,9 +75,9 @@
 			echo '<h2>'. self::$admin_page_title .'</h2>';
 			
 			/* Display table */
-			$shortcode_finder_table = new Shortcode_Finder_Table();
-			$shortcode_finder_table->prepare_items();
-			$shortcode_finder_table->display();			
+			$shortcode_locator_table = new Shortcode_Locator_Table();
+			$shortcode_locator_table->prepare_items();
+			$shortcode_locator_table->display();			
 			
 			/* Close page */
 			echo '</div>';
@@ -87,7 +87,7 @@
 		/* Add shortcode column to selected post types */
 		function add_shortcode_post_column( $columns ) {
 			
-			$columns['shortcodes'] = 'Shortcodes Found';
+			$columns['shortcodes'] = 'Shortcodes Located';
 			return $columns;
 			
 		}
@@ -96,11 +96,11 @@
 		function render_shortcode_post_column( $column, $post_id ) {
 			
 			/* Get shortcodes in post */
-			$shortcodes_found = self::get_shortcodes_for_post( get_post_field( 'post_content', $post_id ) );
+			$shortcodes_located = self::get_shortcodes_for_post( get_post_field( 'post_content', $post_id ) );
 			
 			/* Display if found */
-			if ( ! empty( $shortcodes_found ) )
-				echo implode( '<br />', $shortcodes_found );
+			if ( ! empty( $shortcodes_located ) )
+				echo implode( '<br />', $shortcodes_located );
 			
 		}
 		
@@ -108,7 +108,7 @@
 		function set_post_types() {
 			
 			/* Set list of post types to exclude */
-			$excluded_post_types = apply_filters( 'shortcode_finder_excluded_post_types', array( 'attachment', 'revision', 'nav_menu_item' ) );
+			$excluded_post_types = apply_filters( 'shortcode_locator_excluded_post_types', array( 'attachment', 'revision', 'nav_menu_item' ) );
 			
 			/* Get registered post types */
 			$registered_post_types = get_post_types( array(), 'objects' );
@@ -130,11 +130,11 @@
 			$shortcode_regex = ( is_null( $shortcode ) ) ? get_shortcode_regex() : self::get_specific_shortcode_regex( $shortcode );
 			
 			/* Search for shortcodes */
-			preg_match_all( '/'. $shortcode_regex .'/', $post_content, $shortcodes_found );
+			preg_match_all( '/'. $shortcode_regex .'/', $post_content, $shortcodes_located );
 			
-			/* Loop through the shortcodes found array and push them to a separate array */
+			/* Loop through the shortcodes located array and push them to a separate array */
 			$shortcodes = array();
-			foreach( $shortcodes_found as $child_array ) {
+			foreach( $shortcodes_located as $child_array ) {
 				
 				foreach( $child_array as $key => $value ) {
 				
@@ -208,4 +208,4 @@
 		
 	}
 
-	Shortcode_Finder::get_instance();
+	Shortcode_Locator::get_instance();
