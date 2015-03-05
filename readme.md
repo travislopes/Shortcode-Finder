@@ -12,6 +12,8 @@ Want to view shortcodes in use while managing your posts? Enable the Shortcodes 
 
 
 ### Changelog
+* v1.0.1
+	* Made post title and type columns sortable
 * v1.0.0
 	* Initial release
 
