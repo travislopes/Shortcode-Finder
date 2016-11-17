@@ -3,7 +3,7 @@
 
 **Requires at least:** 4.0.0
 
-**Tested up to:** 4.1.1
+**Tested up to:** 4.6.1
 
 ### Description
 Looking to move away from a theme that utilizes a lot of shortcodes? Deactivating a plugin and want to make sure none of your pages break in the process? Shortcode Locator allows you to view where shortcodes are being used throughout your site. You can filter results by a specific shortcode or post type.
@@ -12,14 +12,16 @@ Want to view shortcodes in use while managing your posts? Enable the Shortcodes 
 
 
 ### Changelog
+* v1.1
+	* Rewrote entire plugin.
 * v1.0.1
-	* Made post title and type columns sortable
+	* Made post title and type columns sortable.
 * v1.0.0
-	* Initial release
+	* Initial release.
 
 ### Installation
 #### Requirements
-* WordPress version 4.0.0 and later (tested at 4.1.1)
+* WordPress version 4.0.0 and later (tested at 4.6.1)
 
 #### Installation
 1. Unpack the download package.

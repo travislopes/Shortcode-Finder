@@ -1,210 +1,386 @@
 <?php
-	
-	/*
-	Plugin Name: Shortcode Locator
-	Plugin URI: http://travislop.es/plugins/shortcode-locator/
-	Description: Quickly locate what and where shortcodes are being used
-	Version: 1.0.1
-	Author: travislopes
-	Author URI: http://travislop.es
-	*/
-	
-	class Shortcode_Locator {
-		
-		public static $admin_page_slug = 'shortcode_locator';
-		public static $basename;
-		public static $post_types = array();
-		public static $settings;
-		private static $admin_page_title = 'Shortcode Locator';
-		private static $_instance = null;
-	
-		public static function get_instance() {
-			
-			if ( self::$_instance == null )
-				self::$_instance = new Shortcode_Locator();
-	
-			return self::$_instance;
-			
-		}
-	
-		public function __construct() {
-			
-			/* Set basename */
-			self::$basename = plugin_basename( __FILE__ );
-			
-			/* Include settings page class */
-			include_once 'shortcode-locator-settings.php';
-			
-			/* Assign settings to this class */
-			self::$settings = Shortcode_Locator_Settings::get_settings();
-			
-			/* Register admin page */
-			add_action( 'admin_menu', array( __CLASS__, 'register_admin_page' ) );
-			
-			/* Add and render shortcode column to selected post types */
-			foreach( self::$settings['display_column'] as $post_type ) {
-				
-				add_filter( 'manage_'. $post_type .'_posts_columns', array( __CLASS__, 'add_shortcode_post_column' ) );
-				add_filter( 'manage_'. $post_type .'_posts_custom_column', array( __CLASS__, 'render_shortcode_post_column' ), 10, 2 );
-				
-			}
-			
-			/* Set available post types */
-			add_action( 'admin_init', array( __CLASS__, 'set_post_types' ) );
-			
+/**
+Plugin Name: Shortcode Locator
+Plugin URI: http://travislop.es/plugins/shortcode-locator/
+Description: Quickly locate what and where shortcodes are being used
+Version: 1.1
+Author: travislopes
+Author URI: http://travislop.es
+ **/
+
+/**
+ * Shortcode Locator.
+ *
+ * @since     1.0
+ * @author    Travis Lopes
+ * @copyright Copyright (c) 2016, Travis Lopes
+ */
+class Shortcode_Locator {
+
+	/**
+	 * Defines the plugin slug.
+	 *
+	 * @since  1.1
+	 * @access public
+	 * @var    string $_slug The slug used for this plugin.
+	 */
+	public $slug = 'shortcode_locator';
+
+	/**
+	 * Defines the full path to this class file.
+	 *
+	 * @since  1.1
+	 * @access protected
+	 * @var    string $full_path The full path.
+	 */
+	protected $full_path = __FILE__;
+
+	/**
+	 * Get instance of this class.
+	 *
+	 * @since  1.0
+	 * @access public
+	 * @static
+	 *
+	 * @return $_instance
+	 */
+	private static $_instance = null;
+
+	/**
+	 * Get instance of this class.
+	 *
+	 * @since  1.0
+	 * @access public
+	 * @static
+	 *
+	 * @return $_instance
+	 */
+	public static function get_instance() {
+
+		if ( null === self::$_instance ) {
+			self::$_instance = new self;
 		}
 
-		/* Register admin page */
-		function register_admin_page() {
-			
-			add_submenu_page( 'tools.php', self::$admin_page_title, self::$admin_page_title, 'edit_posts', self::$admin_page_slug, array( __CLASS__, 'render_admin_page' ) );
-			
-		}
-		
-		/* Render admin page */
-		function render_admin_page() {
-						
-			/* Load table class */
-			include_once 'shortcode-locator-table.php';
+		return self::$_instance;
 
-			/* Open page */
-			echo '<div class="wrap">';
-			
-			/* Page title */
-			echo '<h2>'. self::$admin_page_title .'</h2>';
-			
-			/* Display table */
-			$shortcode_locator_table = new Shortcode_Locator_Table();
-			$shortcode_locator_table->prepare_items();
-			$shortcode_locator_table->display();			
-			
-			/* Close page */
-			echo '</div>';
-			
-		}
-
-		/* Add shortcode column to selected post types */
-		function add_shortcode_post_column( $columns ) {
-			
-			$columns['shortcodes'] = 'Shortcodes Located';
-			return $columns;
-			
-		}
-
-		/* Render shortcode column to selected post types */
-		function render_shortcode_post_column( $column, $post_id ) {
-			
-			/* Get shortcodes in post */
-			$shortcodes_located = self::get_shortcodes_for_post( get_post_field( 'post_content', $post_id ) );
-			
-			/* Display if found */
-			if ( ! empty( $shortcodes_located ) )
-				echo implode( '<br />', $shortcodes_located );
-			
-		}
-		
-		/* Set available post types */
-		function set_post_types() {
-			
-			/* Set list of post types to exclude */
-			$excluded_post_types = apply_filters( 'shortcode_locator_excluded_post_types', array( 'attachment', 'revision', 'nav_menu_item' ) );
-			
-			/* Get registered post types */
-			$registered_post_types = get_post_types( array(), 'objects' );
-			
-			/* Loop through registered post types and push to class array if not excluded */
-			foreach( $registered_post_types as $post_type ) {
-								
-				if( ! in_array( $post_type->name, $excluded_post_types ) )
-					self::$post_types[$post_type->name] = $post_type->label;				
-				
-			}
-			
-		}
-
-		/* Get shortcodes for post */
-		function get_shortcodes_for_post( $post_content, $shortcode = null ) {
-			
-			/* Get shortcode regex */
-			$shortcode_regex = ( is_null( $shortcode ) ) ? get_shortcode_regex() : self::get_specific_shortcode_regex( $shortcode );
-			
-			/* Search for shortcodes */
-			preg_match_all( '/'. $shortcode_regex .'/', $post_content, $shortcodes_located );
-			
-			/* Loop through the shortcodes located array and push them to a separate array */
-			$shortcodes = array();
-			foreach( $shortcodes_located as $child_array ) {
-				
-				foreach( $child_array as $key => $value ) {
-				
-					if ( ! isset( $shortcodes[$key] ) ) 
-						$shortcodes[$key] = array();
-						
-					$shortcodes[$key][] = $value;
-					
-				}
-				
-			}
-			
-			/* Loop through the shortcodes again and put together shortcode string */
-			$shortcode_strings = array();
-			foreach( $shortcodes as &$shortcode ) {
-				
-				$shortcode_string = '['. $shortcode[2];
-				
-				/* If arguments exist, add them to the shortcode string */
-				if ( ! empty( $shortcode[3] ) )
-					$shortcode_string .= $shortcode[3];
-				
-				/* Close shortcode string */
-				$shortcode_string .= ']';
-				
-				/* Add to array */
-				$shortcode_strings[] = $shortcode_string;
-				
-			}
-			
-			/* Return found shortcodes */
-			return $shortcode_strings;
-			
-		}
-		
-		/* Get regex for specific shortcode */
-		function get_specific_shortcode_regex( $shortcode ) {
-			
-			return
-				  '\\['                              // Opening bracket
-				. '(\\[?)'                           // 1: Optional second opening bracket for escaping shortcodes: [[tag]]
-				. "($shortcode)"                     // 2: Shortcode name
-				. '(?![\\w-])'                       // Not followed by word character or hyphen
-				. '('                                // 3: Unroll the loop: Inside the opening shortcode tag
-				.     '[^\\]\\/]*'                   // Not a closing bracket or forward slash
-				.     '(?:'
-				.         '\\/(?!\\])'               // A forward slash not followed by a closing bracket
-				.         '[^\\]\\/]*'               // Not a closing bracket or forward slash
-				.     ')*?'
-				. ')'
-				. '(?:'
-				.     '(\\/)'                        // 4: Self closing tag ...
-				.     '\\]'                          // ... and closing bracket
-				. '|'
-				.     '\\]'                          // Closing bracket
-				.     '(?:'
-				.         '('                        // 5: Unroll the loop: Optionally, anything between the opening and closing shortcode tags
-				.             '[^\\[]*+'             // Not an opening bracket
-				.             '(?:'
-				.                 '\\[(?!\\/\\2\\])' // An opening bracket not followed by the closing shortcode tag
-				.                 '[^\\[]*+'         // Not an opening bracket
-				.             ')*+'
-				.         ')'
-				.         '\\[\\/\\2\\]'             // Closing shortcode tag
-				.     ')?'
-				. ')'
-				. '(\\]?)';                          // 6: Optional second closing brocket for escaping shortcodes: [[tag]]
-			
-			
-		}
-		
 	}
 
-	Shortcode_Locator::get_instance();
+	/**
+	 * Constructor.
+	 *
+	 * @since  1.0
+	 * @access public
+	 */
+	public function __construct() {
+
+		// Load required classes.
+		require_once 'includes/class-shortcode-locator-settings.php';
+		require_once 'includes/class-shortcode-locator-table.php';
+
+		// Initialize settings.
+		$settings = shortcode_locator_settings();
+
+		// Register plugin action links.
+		add_filter( 'plugin_action_links_'. plugin_basename( $this->full_path ), array( $this, 'plugin_action_links' ) );
+
+		// Register plugin pages.
+		add_action( 'admin_menu', array( $this, 'register_plugin_page' ) );
+		add_action( 'admin_menu', array( $settings, 'register_settings_page' ) );
+
+		// Add shortcode post column.
+		add_filter( 'manage_posts_columns', array( $this, 'add_posts_column' ), 10, 2 );
+		add_action( 'manage_posts_custom_column', array( $this, 'render_posts_column' ), 10, 2 );
+
+	}
+
+
+
+
+
+	// # SETTINGS ------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Links display on the pluginspage.
+	 *
+	 * @since  1.1
+	 * @access public
+	 * @param  array $links An array of plugin action links.
+	 *
+	 * @return array
+	 */
+	public function plugin_action_links( $links ) {
+
+		// Prepare plugin links.
+		$plugin_links = array( '<a href="'. admin_url( 'options-general.php?page='. shortcode_locator_settings()->page_slug ) .'">' . esc_html__( 'Settings', 'shortcode-locator' ) . '</a>' );
+
+		return array_merge( $plugin_links, $links );
+
+	}
+
+
+
+
+
+	// # PLUGIN PAGE ---------------------------------------------------------------------------------------------------
+
+	/**
+	 * Register plugin page.
+	 *
+	 * @since  1.0
+	 * @access public
+	 */
+	public function register_plugin_page() {
+
+		// Add plugin page to Tools menu.
+		add_submenu_page(
+			'tools.php', // Parent slug.
+			$this->plugin_page_title(), // Page title.
+			$this->plugin_page_title(), // Menu title.
+			'edit_posts', // Capability.
+			$this->slug, // Menu slug.
+			array( $this, 'render_plugin_page' ) // Page function.
+		);
+
+	}
+
+	/**
+	 * Render and display plugin page.
+	 *
+	 * @since  1.0
+	 * @access public
+	 */
+	public function render_plugin_page() {
+
+		// Start page.
+		echo '<div class="wrap">';
+
+		// Display page title.
+		echo '<h2>'. $this->plugin_page_title() .'</h2>';
+
+		// Display shortcodes table.
+		$table = new Shortcode_Locator_Table();
+		$table->prepare_items();
+		$table->display();
+
+		// End page.
+		echo '</div>';
+
+	}
+
+	/**
+	 * Prepares plugin page title.
+	 *
+	 * @since  1.1
+	 * @access public
+	 *
+	 * @return string
+	 */
+	public function plugin_page_title() {
+
+		return esc_html__( 'Shortcode Locator', 'shortcode-locator' );
+
+	}
+
+
+
+
+
+	// # POSTS PAGE ----------------------------------------------------------------------------------------------------
+
+	/**
+	 * Add shortcode column to posts list.
+	 *
+	 * @since  1.0
+	 * @access public
+	 *
+	 * @param array  $columns   An array of column names.
+	 * @param string $post_type The post type slug.
+	 *
+	 * @return array
+	 */
+	public function add_posts_column( $columns, $post_type ) {
+
+		// Get allowed post types.
+		$allowed_post_types = shortcode_locator_settings()->get_setting( 'display_column' );
+
+		// If this post type is not on the display columns list, return columns.
+		if ( ! in_array( $post_type, $allowed_post_types ) ) {
+			return $columns;
+		}
+
+		// Add columns.
+		$columns['shortcodes'] = esc_html__( 'Shortcodes Located', 'shortcode-locator' );
+
+		return $columns;
+
+	}
+
+	/**
+	 * Display shortcode column on posts list.
+	 *
+	 * @since  1.0
+	 * @access public
+	 *
+	 * @param string $column  The name of the column to display.
+	 * @param int    $post_id The current post ID.
+	 */
+	public function render_posts_column( $column, $post_id ) {
+
+		// Get post content.
+		$post_content = get_post_field( 'post_content', $post_id );
+
+		// Get shortcodes in post.
+		$shortcodes = $this->get_shortcodes_for_post( $post_content );
+
+		// If no shortcodes were found, return.
+		if ( empty( $shortcodes ) ) {
+			return;
+		}
+
+		// Escape shortcodes.
+		$shortcodes = array_map( 'esc_html', $shortcodes );
+
+		// Display shortcodes.
+		echo implode( '<br />', $shortcodes );
+
+	}
+
+	/**
+	 * Get available post types.
+	 *
+	 * @since  1.1
+	 * @access public
+	 *
+	 * @return array
+	 */
+	public function get_post_types() {
+
+		// Initialize post types array.
+		$post_types = array();
+
+		// Define excluded post types.
+		$excluded_post_types = array( 'attachment', 'revision', 'nav_menu_item' );
+		$excluded_post_types = apply_filters( 'shortcode_locator_excluded_post_types', $excluded_post_types );
+
+		// Get registered post types.
+		$registered_post_types = get_post_types( array(), 'objects' );
+
+		// Loop through registered post types.
+		foreach ( $registered_post_types as $post_type ) {
+
+			// If post type is excluded, skip it.
+			if ( in_array( $post_type->name, $excluded_post_types ) ) {
+				continue;
+			}
+
+			// Add post type to return array.
+			$post_types[ $post_type->name ] = $post_type->label;
+
+		}
+
+		return $post_types;
+
+	}
+
+
+
+
+
+	// # HELPERS -------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Get shortcodes within post content.
+	 *
+	 * @since  1.0
+	 * @access public
+	 *
+	 * @param string $post_content Post content.
+	 * @param string $shortcode    Shortcode to search for. Defaults to null.
+	 *
+	 * @return array
+	 */
+	public function get_shortcodes_for_post( $post_content, $shortcode = null ) {
+
+		// Initialize shortcodes return array.
+		$shortcodes = array();
+
+		// Prepare shortcode regex.
+		$shortcode_regex = $shortcode ? $this->get_shortcode_regex( $shortcode ) : get_shortcode_regex();
+
+		// Locate shortcodes.
+		preg_match_all( '/'. $shortcode_regex .'/', $post_content, $located );
+
+		// If no shortcodes were located, return.
+		if ( empty( $located[0] ) ) {
+			return $shortcodes;
+		}
+
+		// Loop through located shortcodes.
+		foreach ( $located[0] as $i => $shortcode_string ) {
+
+			// Add to return array.
+			$shortcodes[] = $shortcode_string;
+
+		}
+
+		return $shortcodes;
+
+	}
+
+	/**
+	 * Get regular expression for a shortcode.
+	 *
+	 * @since  1.0
+	 * @access public
+	 * @param  string $shortcode Shortcode name.
+	 *
+	 * @return string
+	 */
+	public function get_shortcode_regex( $shortcode ) {
+
+		return
+			  '\\['                              // Opening bracket
+			. '(\\[?)'                           // 1: Optional second opening bracket for escaping shortcodes: [[tag]]
+			. "($shortcode)"                     // 2: Shortcode name
+			. '(?![\\w-])'                       // Not followed by word character or hyphen
+			. '('                                // 3: Unroll the loop: Inside the opening shortcode tag
+			.     '[^\\]\\/]*'                   // Not a closing bracket or forward slash
+			.     '(?:'
+			.         '\\/(?!\\])'               // A forward slash not followed by a closing bracket
+			.         '[^\\]\\/]*'               // Not a closing bracket or forward slash
+			.     ')*?'
+			. ')'
+			. '(?:'
+			.     '(\\/)'                        // 4: Self closing tag ...
+			.     '\\]'                          // ... and closing bracket
+			. '|'
+			.     '\\]'                          // Closing bracket
+			.     '(?:'
+			.         '('                        // 5: Unroll the loop: Optionally, anything between the opening and closing shortcode tags
+			.             '[^\\[]*+'             // Not an opening bracket
+			.             '(?:'
+			.                 '\\[(?!\\/\\2\\])' // An opening bracket not followed by the closing shortcode tag
+			.                 '[^\\[]*+'         // Not an opening bracket
+			.             ')*+'
+			.         ')'
+			.         '\\[\\/\\2\\]'             // Closing shortcode tag
+			.     ')?'
+			. ')'
+			. '(\\]?)';                          // 6: Optional second closing brocket for escaping shortcodes: [[tag]]
+
+	}
+
+}
+
+/**
+ * Returns an instance of the Shortcode_Locator class.
+ *
+ * @see    Shortcode_Locator::get_instance()
+ *
+ * @return object Shortcode_Locator
+ */
+function shortcode_locator() {
+	return Shortcode_Locator::get_instance();
+}
+
+shortcode_locator();
