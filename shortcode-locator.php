@@ -3,7 +3,7 @@
 Plugin Name: Shortcode Locator
 Plugin URI: http://travislop.es/plugins/shortcode-locator/
 Description: Quickly locate what and where shortcodes are being used
-Version: 1.1
+Version: 1.1.1
 Author: travislopes
 Author URI: http://travislop.es
  **/
@@ -111,7 +111,7 @@ class Shortcode_Locator {
 	public function plugin_action_links( $links ) {
 
 		// Prepare plugin links.
-		$plugin_links = array( '<a href="'. admin_url( 'options-general.php?page='. shortcode_locator_settings()->page_slug ) .'">' . esc_html__( 'Settings', 'shortcode-locator' ) . '</a>' );
+		$plugin_links = array( '<a href="'. admin_url( 'options-general.php?page='. shortcode_locator_settings()->slug ) .'">' . esc_html__( 'Settings', 'shortcode-locator' ) . '</a>' );
 
 		return array_merge( $plugin_links, $links );
 

@@ -12,6 +12,8 @@ Want to view shortcodes in use while managing your posts? Enable the Shortcodes 
 
 
 ### Changelog
+* v1.1.1
+	* Fixed PHP notice on plugins page.
 * v1.1
 	* Rewrote entire plugin.
 * v1.0.1
